@@ -11,7 +11,6 @@ const peers = new Map();
 let STREAM = null;
 
 const Meet = () => {
-    // useSocket();
     const router = useRouter();
 
     const pathname = usePathname();

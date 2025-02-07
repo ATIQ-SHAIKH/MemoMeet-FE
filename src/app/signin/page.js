@@ -27,12 +27,12 @@ export default function SignIn() {
 
   return (
     <div className="flex items-center justify-center h-screen bg-gradient-to-r from-cyan-500 to-blue-500">
-      {loading ? (<Loader />) : (
+      {/* {loading ? (<Loader />) : ( */}
         <><div className="p-6 rounded-lg shadow-xl w-full max-w-sm bg-white">
           <h2 className="text-2xl font-bold mb-6 text-center text-black">Sign In</h2>
           <form onSubmit={handleSubmit(onSubmit)}>
             <div className="mb-4">
-              <label className="block text-sm font-medium font-bold text-black">Email</label>
+              <label className="block text-sm font-large font-bold text-black">Email</label>
               <input
                 type="email"
                 {...register("email", {
@@ -42,13 +42,13 @@ export default function SignIn() {
                     message: "Invalid email address",
                   },
                 })}
-                className="mt-1 p-2 w-full border rounded-md"
+                className="mt-1 p-2 w-full border rounded-md text-black border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
               {errors.email && <p className="text-red-500 text-sm">{errors.email.message}</p>}
             </div>
 
             <div className="mb-6 relative">
-              <label className="block text-sm font-medium font-bold text-black">Password</label>
+              <label className="block text-sm font-large font-bold text-black">Password</label>
               <input
                 type={passwordVisible ? "text" : "password"}
                 {...register("password", {
@@ -58,7 +58,7 @@ export default function SignIn() {
                     message: "Password must be at least 6 characters",
                   },
                 })}
-                className="mt-1 p-2 w-full border rounded-md bg-indigo-600 text-white pr-10" // Adjust padding to accommodate icon
+                className="mt-1 p-2 w-full border rounded-md text-black border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500" // Adjust padding to accommodate icon
               />
               {errors.password && <p className="text-red-500 text-sm">{errors.password.message}</p>}
 
@@ -83,8 +83,8 @@ export default function SignIn() {
         </div>
           <ToastContainer />
         </>
-        )
-      }
+        {/* )
+      } */}
     </div>
   );
 }
