@@ -17,8 +17,8 @@ export default function ControlsBar({ micOn, videoOn, onToggleMic, onToggleVideo
       <button className="bg-gray-700 p-3 rounded-full hover:bg-gray-600" onClick={onToggleVideo}>
         {videoOn ? <FaVideo className="text-white" /> : <FaVideoSlash className="text-white" />}
       </button>
-      <button className="bg-red-700 p-3 rounded-full hover:bg-red-600">
-        <FaPhoneSlash onClick={onEndCall} className="text-white" />
+      <button className="bg-red-700 p-3 rounded-full hover:bg-red-600" onClick={onEndCall}>
+        <FaPhoneSlash className="text-white" />
       </button>
       <button className="bg-gray-700 p-3 rounded-full hover:bg-gray-600" onClick={onTogglePanel}>
         <FaComments className="text-white" />
