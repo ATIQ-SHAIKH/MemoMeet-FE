@@ -2,8 +2,8 @@
 const nextConfig = {
     reactStrictMode: false,
     env: {
-        BACKEND_URL: "http://localhost:9999/api",
-        WEBSOCKET_URL: "http://localhost:9999",
+        BACKEND_URL: "https://memomeet-be.onrender.com/api",
+        WEBSOCKET_URL: "https://memomeet-be.onrender.com",
     }
 };
 
