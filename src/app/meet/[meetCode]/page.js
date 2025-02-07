@@ -141,7 +141,7 @@ const Meet = () => {
                 }
             }
 
-            if (event.track.kind === 'audio') {
+            if (socketId !== socketRef.current.id && event.track.kind === 'audio') {
                 // Create a audio element
                 const audioElement = document.createElement('audio')
 
