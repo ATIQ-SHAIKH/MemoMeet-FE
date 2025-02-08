@@ -1,9 +1,18 @@
-import React from 'react';
+import { quantum } from 'ldrs'
+
+quantum.register()
+
+// Default values shown
 
 const Loader = () => {
   return (
-    <div className="flex items-center justify-center h-screen bg-gray-100">
-      <div className="w-16 h-16 border-4 border-gray-300 border-t-blue-500 rounded-full animate-spin"></div>
+    <div className="flex items-center justify-center h-screen bg-gradient-to-r from-cyan-500 to-blue-500">
+      <l-quantum
+        size="45"
+        speed="1.75"
+        color="white"
+        className="flex items-center justify-center"
+      ></l-quantum>
     </div>
   );
 };
