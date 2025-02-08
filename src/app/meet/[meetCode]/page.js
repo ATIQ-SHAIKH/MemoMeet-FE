@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { io } from 'socket.io-client';
 import ControlsBar from '@/components/ControlsBar';
 import SidePanel from '@/components/SidePanel';
+import Loader from '@/components/Loader';
 
 const peers = new Map();
 let STREAM = null;
@@ -22,6 +23,7 @@ const Meet = () => {
     const socketRef = useRef();
     const iceCandidatesRef = useRef();
 
+    const [isConnected, setIsConnected] = useState(false);
     const [micOn, setMicOn] = useState(true);
     const [videoOn, setVideoOn] = useState(true);
     const [isPanelOpen, setIsPanelOpen] = useState(false);
@@ -40,7 +42,18 @@ const Meet = () => {
         console.log(roomId, 'roomId')
         socketRef.current = io(`${process.env.WEBSOCKET_URL}`);
 
-        getUserMedia()
+        socketRef.current.on('connect', () => {
+            console.log('Socket connected');
+            setIsConnected(true);
+            getUserMedia(); // Move getUserMedia here
+        });
+        // getUserMedia()
+
+        // Add disconnect handler
+        socketRef.current.on('disconnect', () => {
+            console.log('Socket disconnected');
+            setIsConnected(false);
+        });
 
         socketRef.current.on('joined', handleRoomJoined);
         console.log("this is", socketRef.current.id)
@@ -65,6 +78,7 @@ const Meet = () => {
             className='bg-black rounded-md'
             autoPlay
             playsInline
+            muted={true}    
         ></video>
     )
 
@@ -141,7 +155,7 @@ const Meet = () => {
                 }
             }
 
-            if (socketId !== socketRef.current.id && event.track.kind === 'audio') {
+            if (event.track.kind === 'audio') {
                 // Create a audio element
                 const audioElement = document.createElement('audio')
 
@@ -149,6 +163,9 @@ const Meet = () => {
                 audioElement.id = `audio-${socketId}`
                 audioElement.autoplay = true
                 audioElement.style.display = 'none'
+                // Mute audio if it's from the local user
+                console.log(socketId , socketRef.current.id)
+                audioElement.muted = socketId === socketRef.current.id
                 audioElement.srcObject = stream
 
                 if (videoContainerRef && videoContainerRef.current) {
@@ -272,14 +289,20 @@ const Meet = () => {
         console.log(isPanelOpen)
     };
 
+    if (!isConnected) {
+        return (
+            <Loader />
+        );
+    }
+
     return (
         <div className="h-screen bg-gray-900 text-white flex flex-col relative">
             <h1>Room: {roomId}-{socketRef.current?.id || "connecting..."}</h1>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4 p-4">
-                <video autoPlay muted ref={userVideoRef} style={{ width: '300px', border: '1px solid black' }} />
-                <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-sm p-2">
+                {/* <video autoPlay muted ref={userVideoRef} style={{ width: '300px', border: '1px solid black' }} /> */}
+                {/* <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-sm p-2">
                     You
-                </div>
+                </div> */}
                 <div ref={videoContainerRef} id='video-container' className={`grid grid-cols-1 sm:grid-cols-2 gap-4 justify-center items-center`}>
                     {videoElement}
                 </div>
