@@ -69,6 +69,12 @@ const Meet = () => {
             console.log("leaveRoom")
             leaveRoom();
             window.removeEventListener('beforeunload', handleBeforeUnload);
+            if (STREAM) {
+                STREAM.getTracks().forEach(track => {
+                    track.stop();
+                });
+                STREAM = null;
+            }
         }
     }, [roomId]);
 
@@ -78,7 +84,7 @@ const Meet = () => {
             className='bg-black rounded-md'
             autoPlay
             playsInline
-            muted={true}    
+            muted={true}
         ></video>
     )
 
@@ -164,7 +170,7 @@ const Meet = () => {
                 audioElement.autoplay = true
                 audioElement.style.display = 'none'
                 // Mute audio if it's from the local user
-                console.log(socketId , socketRef.current.id)
+                console.log(socketId, socketRef.current.id)
                 audioElement.muted = socketId === socketRef.current.id
                 audioElement.srcObject = stream
 
