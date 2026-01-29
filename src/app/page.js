@@ -6,7 +6,7 @@ import { checkSession, createMeetCode } from '@/utils/api';
 import Loader from '@/components/Loader';
 import LandingPageNavBar from '@/components/LandingPageNavBar';
 import LandingPageContent from '@/components/LandingPageContent';
-import LandingPageImage from "@/components/LandingPageImage";
+import LandingPageImage from '@/components/LandingPageImage';
 
 export default function Home() {
   const [loading, setLoading] = useState(true);
