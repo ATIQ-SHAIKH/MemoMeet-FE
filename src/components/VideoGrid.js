@@ -1,6 +1,12 @@
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect } from 'react';
 
-function VideoGrid({ participant, userStreamRef, socketRef, roomId, createPeerConnection }) {
+function VideoGrid({
+  participant,
+  userStreamRef,
+  socketRef,
+  roomId,
+  createPeerConnection,
+}) {
   const rtcConnectionRef = useRef(null);
 
   const handleReceivedOffer = (offer) => {
@@ -8,11 +14,11 @@ function VideoGrid({ participant, userStreamRef, socketRef, roomId, createPeerCo
       rtcConnectionRef.current = createPeerConnection();
       rtcConnectionRef.current.addTrack(
         userStreamRef.current.getTracks()[0],
-        userStreamRef.current,
+        userStreamRef.current
       );
       rtcConnectionRef.current.addTrack(
         userStreamRef.current.getTracks()[1],
-        userStreamRef.current,
+        userStreamRef.current
       );
       rtcConnectionRef.current.setRemoteDescription(offer);
 
