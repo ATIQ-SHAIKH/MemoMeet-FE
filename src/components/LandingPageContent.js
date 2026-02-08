@@ -15,7 +15,7 @@ export default function LandingPageContent({
         communication.
       </p>
       {loggedIn ? (
-        <div className="w-full flex flex-col sm:flex-row items-center text-center sm:items-start gap-4">
+        <div className="w-full flex flex-col sm:flex-row justify-center items-center text-center sm:items-start gap-4">
           <button
             className="bg-indigo-600 text-white px-6 py-3 rounded-md hover:bg-indigo-500"
             onClick={handleStartMeetingClick}
