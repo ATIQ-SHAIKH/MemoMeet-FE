@@ -1,7 +1,7 @@
 export const checkSession = async () => {
   try {
     const response = await fetch(
-      `${process.env.BACKEND_URL}/user/check/session`,
+      `${process.env.NEXT_PUBLIC_BACKEND_URL}/user/check/session`,
       {
         method: 'GET',
         credentials: 'include', // Ensure cookies are sent with the request
@@ -35,7 +35,7 @@ export const fetchWithAuth = async (url) => {
 
 export const logout = async () => {
   try {
-    const response = await fetch(`${process.env.BACKEND_URL}/user/logout`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/user/logout`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -55,7 +55,7 @@ export const logout = async () => {
 };
 
 export const signin = async (data) => {
-  const response = await fetch(`${process.env.BACKEND_URL}/user/signin`, {
+  const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/user/signin`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -73,7 +73,7 @@ export const signin = async (data) => {
 
 export const createMeetCode = async () => {
   const response = await fetch(
-    `${process.env.BACKEND_URL}/user/create/meet/code`,
+    `${process.env.NEXT_PUBLIC_BACKEND_URL}/user/create/meet/code`,
     {
       method: 'POST',
       headers: {

@@ -40,7 +40,7 @@ const Meet = () => {
     window.addEventListener('beforeunload', handleBeforeUnload);
 
     console.log(roomId, 'roomId');
-    socketRef.current = io(`${process.env.WEBSOCKET_URL}`);
+    socketRef.current = io(`${process.env.NEXT_PUBLIC_WEBSOCKET_URL}`);
 
     socketRef.current.on('connect', () => {
       console.log('Socket connected');

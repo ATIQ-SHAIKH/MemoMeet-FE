@@ -7,7 +7,7 @@ const useSocket = () => {
   useEffect(() => {
     if (!socketCreated.current) {
       const socketInitializer = async () => {
-        await io(`${process.env.BACKEND_URL}`);
+        await io(`${process.env.NEXT_PUBLIC_BACKEND_URL}`);
       };
       try {
         socketInitializer();
