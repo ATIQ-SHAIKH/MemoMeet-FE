@@ -347,8 +347,8 @@
 
 "use client";
 
-import { usePathname } from "next/navigation";
-import { use, useEffect, useRef, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 import { io } from "socket.io-client";
 
 export default function Meet() {
@@ -356,7 +356,8 @@ export default function Meet() {
   const socketRef = useRef(null);
   const peersRef = useRef(new Map());
 
-    const pathname = usePathname();
+  const pathname = usePathname();
+  const router = useRouter();
   const pathParts = pathname.split('/');
   const roomId = pathParts[pathParts.length - 1];
 
@@ -383,7 +384,7 @@ export default function Meet() {
 
   /* ------------------ Socket + signaling ------------------ */
   useEffect(() => {
-    if (!localStream) return;
+    if (!localStream || socketRef.current) return;
 
     socketRef.current = io(process.env.NEXT_PUBLIC_WEBSOCKET_URL);
 
@@ -395,13 +396,24 @@ export default function Meet() {
     socketRef.current.on("offer", handleOffer);
     socketRef.current.on("answer", handleAnswer);
     socketRef.current.on("ice-candidate", handleIce);
+    socketRef.current.on("user-left", handleUserLeft);
 
     return cleanup;
-  }, [localStream]);
+  }, [localStream, roomId]);
+
+  const leaveRoom = () => {
+    cleanup();
+    router.push("/");
+  };
 
   /* ------------------ Peer creation ------------------ */
   const createPeer = (peerId) => {
     console.log('Creating peer connection for', peerId);
+    if (peersRef.current.has(peerId)) {
+      console.log('Peer connection already exists for', peerId);
+      return peersRef.current.get(peerId);
+    }
+
     const pc = new RTCPeerConnection({
       iceServers: [
         { urls: "stun:stun.l.google.com:19302" },
@@ -411,8 +423,8 @@ export default function Meet() {
     console.log('Peer Connection created', pc);
     localStream.getTracks().forEach(track => {
       console.log('Adding local track to peer connection', track);
-        pc.addTrack(track, localStream)
-      }
+      pc.addTrack(track, localStream)
+    }
     );
 
     pc.ontrack = (e) => {
@@ -426,7 +438,7 @@ export default function Meet() {
     pc.onicecandidate = (e) => {
       if (e.candidate) {
         console.log('ICE candidate generated for', peerId, e.candidate);
-        socketRef.current.emit("ice-candidate", 
+        socketRef.current.emit("ice-candidate",
           e.candidate,
           peerId,
         );
@@ -468,15 +480,46 @@ export default function Meet() {
 
   const handleIce = async (candidate, from) => {
     const pc = peersRef.current.get(from);
-    if (pc) await pc.addIceCandidate(candidate);
+
+    if (!pc) return;
+
+    if (pc.remoteDescription) {
+      await pc.addIceCandidate(candidate);
+    } else {
+      console.log("ICE received before SDP");
+    }
+  };
+
+  /* ------------------ handle User Left ------------------ */
+  const handleUserLeft = (peerId) => {
+    const pc = peersRef.current.get(peerId);
+
+    if (pc) {
+      pc.close();
+      peersRef.current.delete(peerId);
+    }
+
+    setRemoteStreams(prev => prev.filter(p => p.peerId !== peerId));
   };
 
   /* ------------------ Cleanup ------------------ */
   const cleanup = () => {
     console.log("Cleaning up...");
+
     peersRef.current.forEach(pc => pc.close());
-    socketRef.current.emit("leave", roomId);
-    socketRef.current.disconnect();
+    peersRef.current.clear();
+
+    if (socketRef.current) {
+      socketRef.current.off("joined");
+      socketRef.current.off("offer");
+      socketRef.current.off("answer");
+      socketRef.current.off("ice-candidate");
+      socketRef.current.off("user-left");
+
+      socketRef.current.emit("leave", roomId);
+      socketRef.current.disconnect();
+    }
+
     localStream?.getTracks().forEach(t => t.stop());
   };
 
@@ -486,13 +529,13 @@ export default function Meet() {
       <video ref={localVideoRef} autoPlay muted playsInline />
 
       {remoteStreams.map(({ peerId, stream }) => (
-        <div className="border">
-        <VideoTile key={peerId} stream={stream} />
+        <div key={peerId} className="border">
+          <VideoTile stream={stream} />
         </div>
-        
+
       ))}
 
-      <button onClick={cleanup} className="absolute top-4 right-4 bg-red-600 text-white px-4 py-2 rounded">Leave Room</button>
+      <button onClick={leaveRoom} className="absolute top-4 right-4 bg-red-600 text-white px-4 py-2 rounded">Leave Room</button>
     </div>
   );
 }
