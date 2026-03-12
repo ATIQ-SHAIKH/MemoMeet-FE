@@ -8,8 +8,6 @@ import ControlsBar from '@/components/ControlsBar';
 import SidePanel from '@/components/SidePanel';
 import Loader from '@/components/Loader';
 
-const peers = new Map();
-let STREAM = null;
 
 const Meet = () => {
   const router = useRouter();
@@ -18,6 +16,8 @@ const Meet = () => {
   const pathParts = pathname.split('/');
   const roomId = pathParts[pathParts.length - 1];
 
+  const peersRef = useRef(new Map());
+  const streamRef = useRef(null);
   const userVideoRef = useRef();
   const videoContainerRef = useRef(null);
   const socketRef = useRef();
@@ -44,10 +44,10 @@ const Meet = () => {
 
     socketRef.current.on('connect', () => {
       console.log('Socket connected');
+      console.log('Socket ID:', socketRef.current.id);
       setIsConnected(true);
       getUserMedia(); // Move getUserMedia here
     });
-    // getUserMedia()
 
     // Add disconnect handler
     socketRef.current.on('disconnect', () => {
@@ -56,7 +56,6 @@ const Meet = () => {
     });
 
     socketRef.current.on('joined', handleRoomJoined);
-    console.log('this is', socketRef.current.id);
 
     // Events that are webRTC speccific
     socketRef.current.on('offer', handleOffer);
@@ -66,15 +65,19 @@ const Meet = () => {
 
     // clear up after
     return () => {
-      console.log('leaveRoom');
-      leaveRoom();
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-      if (STREAM) {
-        STREAM.getTracks().forEach((track) => {
-          track.stop();
-        });
-        STREAM = null;
+      console.log('cleanup');
+
+      if (socketRef.current) {
+        socketRef.current.emit('leave', roomId);
+        socketRef.current.disconnect();
       }
+
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+        streamRef.current = null;
+      }
+
+      window.removeEventListener('beforeunload', handleBeforeUnload);
     };
   }, [roomId]);
 
@@ -95,8 +98,10 @@ const Meet = () => {
         video: { width: 500, height: 500 },
       })
       .then((stream) => {
-        userVideoRef.current.srcObject = stream;
-        STREAM = stream;
+        if (userVideoRef.current) {
+          userVideoRef.current.srcObject = stream;
+        }
+        streamRef.current = stream;
         socketRef.current.emit('join', { roomId });
       })
       .catch((err) => {
@@ -113,7 +118,7 @@ const Meet = () => {
     console.log(offer);
     await peerConnection.setLocalDescription(offer);
     socketRef.current.emit('offer', { offer, to: newPeerSocketId });
-    peers.set(newPeerSocketId, peerConnection);
+    peersRef.current.set(newPeerSocketId, peerConnection);
   };
 
   const createPeerConnection = async (socketId) => {
@@ -126,19 +131,21 @@ const Meet = () => {
       ],
     });
 
-    if (STREAM) {
-      STREAM.getTracks().forEach((track) => {
-        connection.addTrack(track, STREAM);
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => {
+        connection.addTrack(track, streamRef.current);
       });
     }
 
     // We implement our onicecandidate method for when we received a ICE candidate from the STUN server
     connection.onicecandidate = (event) => {
       if (event.candidate) {
-        iceCandidatesRef.current = [];
+        if (!iceCandidatesRef.current) iceCandidatesRef.current = [];
         iceCandidatesRef.current.push(event.candidate);
+
         socketRef.current.emit('ice-candidate', event.candidate, socketId);
       }
+
     };
 
     // We implement our onTrack method for when we receive tracks
@@ -146,18 +153,20 @@ const Meet = () => {
       const stream = event.streams[0];
 
       if (event.track.kind === 'video') {
-        // Create a video element
-        const videoElement = document.createElement('video');
+        if (!document.getElementById(`video-${socketId}`)) {
+          // Create a video element
+          const videoElement = document.createElement('video');
 
-        // Set attributes for the video element
-        videoElement.id = `video-${socketId}`;
-        videoElement.autoplay = true;
-        videoElement.playsInline = true;
-        videoElement.className = 'rounded-lg';
-        videoElement.srcObject = stream;
+          // Set attributes for the video element
+          videoElement.id = `video-${socketId}`;
+          videoElement.autoplay = true;
+          videoElement.playsInline = true;
+          videoElement.className = 'rounded-lg';
+          videoElement.srcObject = stream;
 
-        if (videoContainerRef && videoContainerRef.current) {
-          videoContainerRef.current.appendChild(videoElement);
+          if (videoContainerRef && videoContainerRef.current) {
+            videoContainerRef.current.appendChild(videoElement);
+          }
         }
       }
 
@@ -195,12 +204,12 @@ const Meet = () => {
 
     socketRef.current.emit('answer', { answer, to: from });
 
-    peers.set(from, peer);
+    peersRef.current.set(from, peer);
   };
 
   const handleAnswer = async ({ answer, from }) => {
     console.log(answer);
-    const peer = peers.get(from);
+    const peer = peersRef.current.get(from);
     await peer.setRemoteDescription(answer).catch((err) => console.log(err));
 
     // exchange ice-candidates
@@ -211,7 +220,7 @@ const Meet = () => {
   };
 
   const handlerNewIceCandidateMsg = async (candidate, from) => {
-    const peer = peers.get(from);
+    const peer = peersRef.current.get(from);
 
     if (!peer) {
       console.error('no peerconnection');
@@ -233,15 +242,17 @@ const Meet = () => {
   };
 
   const leaveRoom = () => {
-    socketRef.current.emit('leave', roomId);
-    socketRef.current.disconnect();
+    if (socketRef.current) {
+      socketRef.current.emit('leave', roomId);
+      socketRef.current.disconnect();
+    }
     router.push('/');
   };
 
   const handleUserLeft = (socketId) => {
     console.log('User Left', socketId);
-    console.log('Before Remove', peers);
-    const peer = peers.get(socketId);
+    console.log('Before Remove', peersRef.current);
+    const peer = peersRef.current.get(socketId);
 
     if (peer) {
       const videoToRemove = document.getElementById(`video-${socketId}`);
@@ -251,11 +262,11 @@ const Meet = () => {
         videoContainerRef.current?.removeChild(videoToRemove);
         videoContainerRef.current?.removeChild(audioToRemove);
         peer.close();
-        peers.delete(socketId);
+        peersRef.current.delete(socketId);
       }
     }
 
-    console.log('After Remove', peers);
+    console.log('After Remove', peersRef.current);
   };
 
   const toggleMic = () => {
